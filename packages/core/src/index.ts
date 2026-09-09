@@ -1,1 +1,11 @@
-export {};
+export type { LoopLike, LoopKind } from './ast/loop-like.js';
+export { collectLoops, matchLoopLike, matchLoopLikeStatement, statementsOf } from './ast/loop-collector.js';
+export { findDirectNestedLoop } from './ast/nested-loop-finder.js';
+export { findPrecedingStatements } from './ast/preceding-statements.js';
+export { boundsToOnePass } from './ast/loop-early-exit-analyzer.js';
+export { findPropertyDefaultArray } from './ast/class-member-resolver.js';
+export type { CollectionSize } from './ast/collection-size-classifier.js';
+export { classifyCollectionSize } from './ast/collection-size-classifier.js';
+export type { JoinSignature } from './ast/join-signature-matcher.js';
+export { findJoinSignature, isRootedIn } from './ast/join-signature-matcher.js';
+export { complexityForJoin, complexityIndexedForm } from './complexity/complexity-label.js';
