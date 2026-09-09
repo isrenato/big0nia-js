@@ -88,6 +88,24 @@ describe('collectLoops', () => {
     expect(collectLoops(source)).toHaveLength(0);
   });
 
+  it('captures the concise arrow-body expression for a concise-body .map() callback', () => {
+    const source = parseSource(`items.map((item) => process(item));`);
+    const loops = collectLoops(source);
+    expect(loops).toHaveLength(1);
+    expect(loops[0].bodyExpression).not.toBeNull();
+    expect(loops[0].bodyExpression!.getText(source)).toBe('process(item)');
+  });
+
+  it('leaves bodyExpression null for a block-bodied .forEach() callback', () => {
+    const source = parseSource(`
+      users.forEach((user, index) => {
+        console.log(user, index);
+      });
+    `);
+    const loops = collectLoops(source);
+    expect(loops[0].bodyExpression).toBeNull();
+  });
+
   it('collects both loops in a directly nested pair, without duplicates', () => {
     const source = parseSource(`
       for (const user of users) {

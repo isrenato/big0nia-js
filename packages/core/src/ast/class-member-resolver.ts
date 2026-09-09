@@ -26,6 +26,7 @@ const ASSIGNMENT_OPERATORS = new Set([
   ts.SyntaxKind.QuestionQuestionEqualsToken,
 ]);
 
+/** Requires the `ts.SourceFile` to have been parsed with `setParentNodes: true` since it relies on `.parent`. */
 function findEnclosingClass(node: ts.Node): ts.ClassDeclaration | null {
   let current: ts.Node | undefined = node.parent;
   while (current) {

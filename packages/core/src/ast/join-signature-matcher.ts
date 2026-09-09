@@ -41,14 +41,16 @@ function describe(expr: ts.Expression): [display: string, key: string] | null {
   return null;
 }
 
-function findComparison(expr: ts.Expression): ts.BinaryExpression | null {
-  if (ts.isBinaryExpression(expr)) {
-    if (EQUALITY_OPERATORS.has(expr.operatorToken.kind)) return expr;
-    if (expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
-      return findComparison(expr.left) ?? findComparison(expr.right);
-    }
+function collectComparisons(expr: ts.Expression, out: ts.BinaryExpression[]): void {
+  if (!ts.isBinaryExpression(expr)) return;
+  if (EQUALITY_OPERATORS.has(expr.operatorToken.kind)) {
+    out.push(expr);
+    return;
   }
-  return null;
+  if (expr.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) {
+    collectComparisons(expr.left, out);
+    collectComparisons(expr.right, out);
+  }
 }
 
 function match(outerSide: ts.Expression, outerName: string, innerSide: ts.Expression, innerName: string): JoinSignature | null {
@@ -65,13 +67,15 @@ export function findJoinSignature(stmts: ts.Statement[], outerName: string, inne
   for (const stmt of stmts) {
     if (!ts.isIfStatement(stmt)) continue;
 
-    const comparison = findComparison(stmt.expression);
-    if (!comparison) continue;
+    const comparisons: ts.BinaryExpression[] = [];
+    collectComparisons(stmt.expression, comparisons);
 
-    const signature =
-      match(comparison.left, outerName, comparison.right, innerName) ??
-      match(comparison.right, outerName, comparison.left, innerName);
-    if (signature) return signature;
+    for (const comparison of comparisons) {
+      const signature =
+        match(comparison.left, outerName, comparison.right, innerName) ??
+        match(comparison.right, outerName, comparison.left, innerName);
+      if (signature) return signature;
+    }
   }
 
   return null;

@@ -97,6 +97,45 @@ describe('findPropertyDefaultArray', () => {
     expect(findPropertyDefaultArray(expr, 'multiplier')).toBeNull();
   });
 
+  it('returns null for every assignment operator in ASSIGNMENT_OPERATORS', () => {
+    const operators = [
+      '=',
+      '+=',
+      '-=',
+      '*=',
+      '**=',
+      '/=',
+      '%=',
+      '<<=',
+      '>>=',
+      '>>>=',
+      '&=',
+      '|=',
+      '||=',
+      '&&=',
+      '??=',
+      '^=',
+    ];
+
+    for (const op of operators) {
+      const expr = firstMethodFirstStatementExpr(
+        `
+        class Service {
+          roles = ['admin'];
+          update() {
+            this.roles ${op} [1];
+          }
+          check() {
+            this.roles;
+          }
+        }
+        `,
+        'check'
+      );
+      expect(findPropertyDefaultArray(expr, 'roles')).toBeNull();
+    }
+  });
+
   it('returns null when there is no enclosing class', () => {
     const file = parseSource('this.roles;');
     const stmt = file.statements[0] as ts.ExpressionStatement;

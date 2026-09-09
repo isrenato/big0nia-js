@@ -60,6 +60,16 @@ describe('findDirectNestedLoop', () => {
     expect(findDirectNestedLoop(outer)).toBeNull();
   });
 
+  it('finds a .forEach() nested inside a concise-body .forEach() callback', () => {
+    const source = parseSource(`
+      users.forEach((u) => orders.forEach((o) => console.log(u, o)));
+    `);
+    const [outer] = collectLoops(source);
+    const inner = findDirectNestedLoop(outer);
+    expect(inner?.kind).toBe('forEach');
+    expect(inner?.itemName).toBe('o');
+  });
+
   it('does not descend into an unrelated nested closure', () => {
     const source = parseSource(`
       for (const user of users) {

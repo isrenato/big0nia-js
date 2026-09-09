@@ -51,6 +51,7 @@ function forToLoopLike(node: ts.ForStatement, match: CanonicalForMatch): LoopLik
     kind: 'for',
     node,
     bodyStatements: node.statement ? statementsOf(node.statement) : [],
+    bodyExpression: null,
     itemName: null,
     indexName: match.indexName,
     collectionExpr: match.collectionExpr,
@@ -68,6 +69,7 @@ function forOfToLoopLike(node: ts.ForOfStatement): LoopLike {
     kind: 'forOf',
     node,
     bodyStatements: statementsOf(node.statement),
+    bodyExpression: null,
     itemName,
     indexName: null,
     collectionExpr: node.expression,
@@ -88,11 +90,13 @@ function matchForEachCall(node: ts.CallExpression): LoopLike | null {
 
   const body = callback.body;
   const bodyStatements = ts.isBlock(body) ? Array.from(body.statements) : [];
+  const bodyExpression = ts.isBlock(body) ? null : body;
 
   return {
     kind: 'forEach',
     node,
     bodyStatements,
+    bodyExpression,
     itemName,
     indexName,
     collectionExpr: node.expression.expression,

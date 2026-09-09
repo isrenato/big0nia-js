@@ -41,6 +41,15 @@ describe('findJoinSignature', () => {
     expect(signature).not.toBeNull();
   });
 
+  it('matches a second equality comparison in an && chain when the first does not match', () => {
+    const signature = findJoinSignature(
+      ifStatements('a.x === b.y && user.getId() === order.getUserId()'),
+      'user',
+      'order'
+    );
+    expect(signature).toEqual({ outerDisplay: 'getId()', innerDisplay: 'getUserId()', innerKey: 'userId' });
+  });
+
   it('does not match when neither side is rooted in the tracked names', () => {
     expect(findJoinSignature(ifStatements('a.x === b.y'), 'user', 'order')).toBeNull();
   });

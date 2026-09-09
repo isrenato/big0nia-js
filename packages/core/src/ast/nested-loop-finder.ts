@@ -1,9 +1,14 @@
 import * as ts from 'typescript';
 import type { LoopLike } from './loop-like.js';
-import { matchLoopLikeStatement, statementsOf } from './loop-collector.js';
+import { matchLoopLike, matchLoopLikeStatement, statementsOf } from './loop-collector.js';
 
 export function findDirectNestedLoop(loop: LoopLike): LoopLike | null {
-  return findInStatements(loop.bodyStatements);
+  const found = findInStatements(loop.bodyStatements);
+  if (found) return found;
+
+  if (loop.bodyExpression) return matchLoopLike(loop.bodyExpression);
+
+  return null;
 }
 
 function findInStatements(stmts: ts.Statement[]): LoopLike | null {

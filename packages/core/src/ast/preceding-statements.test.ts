@@ -41,4 +41,16 @@ describe('findPrecedingStatements', () => {
     const decl = (file.statements[0] as ts.VariableStatement).declarationList.declarations[0];
     expect(findPrecedingStatements(decl)).toEqual([]);
   });
+
+  it('climbs through an ExpressionStatement wrapper to find preceding statements for a .forEach() call', () => {
+    const file = parseSource(`
+      const roles = ["a","b"];
+      roles.forEach((r) => { use(r); });
+    `);
+    const secondStmt = file.statements[1] as ts.ExpressionStatement;
+    const callExpr = secondStmt.expression as ts.CallExpression;
+    const preceding = findPrecedingStatements(callExpr);
+    expect(preceding).toHaveLength(1);
+    expect(preceding[0]).toBe(file.statements[0]);
+  });
 });

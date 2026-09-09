@@ -11,26 +11,34 @@ function blockStatements(body: string): ts.Statement[] {
 
 describe('boundsToOnePass', () => {
   it('is true for an unconditional break', () => {
-    expect(boundsToOnePass(blockStatements('break;'))).toBe(true);
+    expect(boundsToOnePass(blockStatements('break;'), 'for')).toBe(true);
   });
 
   it('is true for an unconditional return', () => {
-    expect(boundsToOnePass(blockStatements('return;'))).toBe(true);
+    expect(boundsToOnePass(blockStatements('return;'), 'for')).toBe(true);
   });
 
   it('is true for an unconditional throw', () => {
-    expect(boundsToOnePass(blockStatements('throw new Error("x");'))).toBe(true);
+    expect(boundsToOnePass(blockStatements('throw new Error("x");'), 'for')).toBe(true);
   });
 
   it('is false for a labeled break (target not resolved, treated conservatively)', () => {
-    expect(boundsToOnePass(blockStatements('break outer;'))).toBe(false);
+    expect(boundsToOnePass(blockStatements('break outer;'), 'for')).toBe(false);
   });
 
   it('is false when the exit is nested inside an if', () => {
-    expect(boundsToOnePass(blockStatements('if (x) { break; }'))).toBe(false);
+    expect(boundsToOnePass(blockStatements('if (x) { break; }'), 'for')).toBe(false);
   });
 
   it('is false for a loop body with no early exit', () => {
-    expect(boundsToOnePass(blockStatements('console.log(1);'))).toBe(false);
+    expect(boundsToOnePass(blockStatements('console.log(1);'), 'for')).toBe(false);
+  });
+
+  it('is false for a bare return inside a forEach callback (return is continue there, not break)', () => {
+    expect(boundsToOnePass(blockStatements('return;'), 'forEach')).toBe(false);
+  });
+
+  it('is true for a throw inside a forEach callback', () => {
+    expect(boundsToOnePass(blockStatements('throw new Error("x");'), 'forEach')).toBe(true);
   });
 });
