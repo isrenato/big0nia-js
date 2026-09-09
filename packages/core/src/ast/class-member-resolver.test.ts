@@ -79,6 +79,24 @@ describe('findPropertyDefaultArray', () => {
     expect(findPropertyDefaultArray(expr, 'roles')).toBeNull();
   });
 
+  it('returns null when the property is reassigned using **= operator', () => {
+    const expr = firstMethodFirstStatementExpr(
+      `
+      class Service {
+        multiplier = [2];
+        update() {
+          this.multiplier **= [4];
+        }
+        check() {
+          this.multiplier;
+        }
+      }
+      `,
+      'check'
+    );
+    expect(findPropertyDefaultArray(expr, 'multiplier')).toBeNull();
+  });
+
   it('returns null when there is no enclosing class', () => {
     const file = parseSource('this.roles;');
     const stmt = file.statements[0] as ts.ExpressionStatement;

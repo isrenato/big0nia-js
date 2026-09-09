@@ -12,6 +12,7 @@ const ASSIGNMENT_OPERATORS = new Set([
   ts.SyntaxKind.PlusEqualsToken,
   ts.SyntaxKind.MinusEqualsToken,
   ts.SyntaxKind.AsteriskEqualsToken,
+  ts.SyntaxKind.AsteriskAsteriskEqualsToken,
   ts.SyntaxKind.SlashEqualsToken,
   ts.SyntaxKind.PercentEqualsToken,
   ts.SyntaxKind.AmpersandEqualsToken,
