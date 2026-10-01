@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import picomatch from 'picomatch';
 
 const SOURCE_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx']);
 
@@ -27,7 +28,20 @@ function walk(dir: string, out: string[]): void {
   }
 }
 
-export function collectFiles(paths: string[], cwd: string): CollectedFiles {
+/**
+ * Builds a predicate that excludes a file when its cwd-relative path (forward slashes) contains any
+ * `ignorePaths` entry as a substring, or matches it as a glob.
+ */
+function ignoreMatcher(cwd: string, ignorePaths: string[]): (absolutePath: string) => boolean {
+  const globs = ignorePaths.map((pattern) => picomatch(pattern, { dot: true }));
+
+  return (absolutePath) => {
+    const relativePath = path.relative(cwd, absolutePath).split(path.sep).join('/');
+    return ignorePaths.some((entry, i) => relativePath.includes(entry) || globs[i](relativePath));
+  };
+}
+
+export function collectFiles(paths: string[], cwd: string, ignorePaths: string[]): CollectedFiles {
   const found: string[] = [];
   const missingPaths: string[] = [];
 
@@ -45,5 +59,6 @@ export function collectFiles(paths: string[], cwd: string): CollectedFiles {
     }
   }
 
-  return { files: [...new Set(found)].sort(), missingPaths };
+  const isIgnored = ignoreMatcher(cwd, ignorePaths);
+  return { files: [...new Set(found)].filter((file) => !isIgnored(file)).sort(), missingPaths };
 }

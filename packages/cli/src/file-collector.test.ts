@@ -59,3 +59,25 @@ describe('collectFiles', () => {
     expect(relative(dir, collectFiles(['src', 'src/a.ts'], dir, []).files)).toEqual(['src/a.ts']);
   });
 });
+
+describe('collectFiles with ignorePaths', () => {
+  it('excludes files whose cwd-relative path contains an entry as a substring', () => {
+    const dir = tempTree(['src/a.ts', 'dist/a.js', 'src/dist-copy/b.ts']);
+    expect(relative(dir, collectFiles(['.'], dir, ['dist']).files)).toEqual(['src/a.ts']);
+  });
+
+  it('excludes files matching a glob entry', () => {
+    const dir = tempTree(['src/api.ts', 'src/api.generated.ts', 'src/deep/x.generated.ts']);
+    expect(relative(dir, collectFiles(['src'], dir, ['**/*.generated.ts']).files)).toEqual(['src/api.ts']);
+  });
+
+  it('applies exclusion to explicitly named files too', () => {
+    const dir = tempTree(['src/api.generated.ts']);
+    expect(collectFiles(['src/api.generated.ts'], dir, ['**/*.generated.ts']).files).toEqual([]);
+  });
+
+  it('excludes nothing when ignorePaths is empty', () => {
+    const dir = tempTree(['dist/a.js']);
+    expect(relative(dir, collectFiles(['.'], dir, []).files)).toEqual(['dist/a.js']);
+  });
+});
