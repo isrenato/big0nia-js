@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as ts from 'typescript';
-import { findPropertyDefaultArray } from './class-member-resolver.js';
+import { findPropertyDefaultArray, findPropertyTypeName } from './class-member-resolver.js';
 import { parseSource } from '../test-support/parse-source.js';
 
 function firstMethodFirstStatementExpr(source: string, methodName: string): ts.Expression {
@@ -140,5 +140,73 @@ describe('findPropertyDefaultArray', () => {
     const file = parseSource('this.roles;');
     const stmt = file.statements[0] as ts.ExpressionStatement;
     expect(findPropertyDefaultArray(stmt.expression, 'roles')).toBeNull();
+  });
+});
+
+describe('findPropertyTypeName', () => {
+  it('resolves a declared property type', () => {
+    const expr = firstMethodFirstStatementExpr(
+      `
+      class UserService {
+        orderMatcher: OrderMatcher;
+        check() {
+          this.orderMatcher;
+        }
+      }
+      `,
+      'check'
+    );
+    expect(findPropertyTypeName(expr, 'orderMatcher')).toBe('OrderMatcher');
+  });
+
+  it('resolves a constructor-promoted property type', () => {
+    const expr = firstMethodFirstStatementExpr(
+      `
+      class UserService {
+        constructor(private readonly orderMatcher: OrderMatcher) {}
+        check() {
+          this.orderMatcher;
+        }
+      }
+      `,
+      'check'
+    );
+    expect(findPropertyTypeName(expr, 'orderMatcher')).toBe('OrderMatcher');
+  });
+
+  it('returns null when the property has no type annotation', () => {
+    const expr = firstMethodFirstStatementExpr(
+      `
+      class UserService {
+        orderMatcher;
+        check() {
+          this.orderMatcher;
+        }
+      }
+      `,
+      'check'
+    );
+    expect(findPropertyTypeName(expr, 'orderMatcher')).toBeNull();
+  });
+
+  it('returns null for a non-reference type', () => {
+    const expr = firstMethodFirstStatementExpr(
+      `
+      class UserService {
+        count: number;
+        check() {
+          this.count;
+        }
+      }
+      `,
+      'check'
+    );
+    expect(findPropertyTypeName(expr, 'count')).toBeNull();
+  });
+
+  it('returns null when there is no enclosing class', () => {
+    const file = parseSource('this.orderMatcher;');
+    const stmt = file.statements[0] as ts.ExpressionStatement;
+    expect(findPropertyTypeName(stmt.expression, 'orderMatcher')).toBeNull();
   });
 });

@@ -7,7 +7,7 @@ const PARAMETER_PROPERTY_MODIFIERS = new Set([
   ts.SyntaxKind.ReadonlyKeyword,
 ]);
 
-const ASSIGNMENT_OPERATORS = new Set([
+export const ASSIGNMENT_OPERATORS = new Set([
   ts.SyntaxKind.EqualsToken,
   ts.SyntaxKind.PlusEqualsToken,
   ts.SyntaxKind.MinusEqualsToken,
@@ -27,7 +27,7 @@ const ASSIGNMENT_OPERATORS = new Set([
 ]);
 
 /** Requires the `ts.SourceFile` to have been parsed with `setParentNodes: true` since it relies on `.parent`. */
-function findEnclosingClass(node: ts.Node): ts.ClassDeclaration | null {
+export function findEnclosingClass(node: ts.Node): ts.ClassDeclaration | null {
   let current: ts.Node | undefined = node.parent;
   while (current) {
     if (ts.isClassDeclaration(current)) return current;
@@ -99,4 +99,38 @@ export function findPropertyDefaultArray(contextNode: ts.Node, propertyName: str
   if (!defaultValue || isReassignedElsewhere(classNode, propertyName)) return null;
 
   return defaultValue;
+}
+
+function simpleTypeName(type: ts.TypeNode | undefined): string | null {
+  return type && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName) ? type.typeName.text : null;
+}
+
+function declaredPropertyTypeName(classNode: ts.ClassDeclaration, propertyName: string): string | null {
+  for (const member of classNode.members) {
+    if (ts.isPropertyDeclaration(member) && ts.isIdentifier(member.name) && member.name.text === propertyName) {
+      return simpleTypeName(member.type);
+    }
+  }
+  return null;
+}
+
+function promotedPropertyTypeName(classNode: ts.ClassDeclaration, propertyName: string): string | null {
+  const ctor = classNode.members.find(ts.isConstructorDeclaration);
+  if (!ctor) return null;
+
+  for (const param of ctor.parameters) {
+    const isParameterProperty = param.modifiers?.some((m) => PARAMETER_PROPERTY_MODIFIERS.has(m.kind)) ?? false;
+    if (isParameterProperty && ts.isIdentifier(param.name) && param.name.text === propertyName) {
+      return simpleTypeName(param.type);
+    }
+  }
+
+  return null;
+}
+
+export function findPropertyTypeName(contextNode: ts.Node, propertyName: string): string | null {
+  const classNode = findEnclosingClass(contextNode);
+  if (!classNode) return null;
+
+  return declaredPropertyTypeName(classNode, propertyName) ?? promotedPropertyTypeName(classNode, propertyName);
 }
