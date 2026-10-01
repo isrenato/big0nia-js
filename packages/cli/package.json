@@ -1,0 +1,26 @@
+{
+  "name": "@big0nia/cli",
+  "version": "0.1.0",
+  "description": "Command-line runner for big0nia: finds accidental O(n²) loops in JavaScript and TypeScript.",
+  "type": "module",
+  "bin": {
+    "big0nia": "./dist/cli.js"
+  },
+  "files": [
+    "dist/cli.js"
+  ],
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "picomatch": "^4.0.0",
+    "typescript": "^5.6.0"
+  },
+  "devDependencies": {
+    "@big0nia/core": "0.1.0"
+  }
+}
