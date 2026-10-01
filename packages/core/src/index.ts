@@ -23,7 +23,7 @@ export { findAllCallSites } from './ast/call-site-finder.js';
 export type { ClassEntry, FunctionEntry, ProjectIndex } from './project/project-index.js';
 export { buildProjectIndex } from './project/project-index-builder.js';
 export type { CallTarget } from './project/call-target-resolver.js';
-export { resolveCallTarget, resolveCallableReference } from './project/call-target-resolver.js';
+export { relativeImportCandidates, resolveCallTarget, resolveCallableReference } from './project/call-target-resolver.js';
 
 export type { Finding, AnalysisContext, LoopRule } from './rules/loop-rule.js';
 export { lineOf } from './rules/loop-rule.js';

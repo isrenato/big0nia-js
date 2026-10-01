@@ -1,7 +1,7 @@
 // packages/core/src/project/call-target-resolver.test.ts
 import { describe, it, expect } from 'vitest';
 import * as ts from 'typescript';
-import { resolveCallTarget, resolveCallableReference } from './call-target-resolver.js';
+import { relativeImportCandidates, resolveCallTarget, resolveCallableReference } from './call-target-resolver.js';
 import { buildProjectIndex } from './project-index-builder.js';
 import { parseSource } from '../test-support/parse-source.js';
 import type { ProjectIndex } from './project-index.js';
@@ -170,6 +170,30 @@ describe('resolveCallTarget', () => {
     expect(target?.filePath).toBe('src/lib/helper.ts');
   });
 
+  it('resolves a relative import of a plain .js file', () => {
+    const helper = parseSource('export function matchOrders() {}', '/virtual/helper.js');
+    const { call, file, precedingStmts } = callExprIn(
+      `
+      import { matchOrders } from './helper.js';
+      function run() { matchOrders(); }
+      `,
+      '/virtual/run.js'
+    );
+    expect(resolveCallTarget(call, precedingStmts, indexOf(file, helper))?.filePath).toBe('/virtual/helper.js');
+  });
+
+  it('resolves a relative directory import through its index file', () => {
+    const helper = parseSource('export function matchOrders() {}', '/virtual/lib/index.js');
+    const { call, file, precedingStmts } = callExprIn(
+      `
+      import { matchOrders } from './lib';
+      function run() { matchOrders(); }
+      `,
+      '/virtual/run.js'
+    );
+    expect(resolveCallTarget(call, precedingStmts, indexOf(file, helper))?.filePath).toBe('/virtual/lib/index.js');
+  });
+
   it('resolves an aliased relative function import to the exported name', () => {
     const helper = parseSource('export function matchOrders() {}', '/virtual/helper.ts');
     const { call, file, precedingStmts } = callExprIn(
@@ -257,5 +281,28 @@ describe('resolveCallableReference', () => {
     const target = resolveCallableReference(stmt.expression, indexOf(file));
     expect(target?.name).toBe('handleItem');
     expect(target?.ownerClassName).toBe('Service');
+  });
+});
+
+describe('relativeImportCandidates', () => {
+  it('lists TS-first candidates for an extension-less specifier', () => {
+    expect(relativeImportCandidates('/p/src/run.ts', './helper')).toEqual([
+      '/p/src/helper.ts',
+      '/p/src/helper.tsx',
+      '/p/src/helper.js',
+      '/p/src/helper.jsx',
+      '/p/src/helper/index.ts',
+      '/p/src/helper/index.tsx',
+      '/p/src/helper/index.js',
+      '/p/src/helper/index.jsx',
+    ]);
+  });
+
+  it('maps a .js specifier to its TS source first, then the literal .js file', () => {
+    expect(relativeImportCandidates('/p/src/run.ts', '../lib/helper.js').slice(0, 3)).toEqual([
+      '/p/lib/helper.ts',
+      '/p/lib/helper.tsx',
+      '/p/lib/helper.js',
+    ]);
   });
 });

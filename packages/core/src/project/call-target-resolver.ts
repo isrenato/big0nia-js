@@ -140,10 +140,20 @@ function findRelativeImport(
   return null;
 }
 
-function resolveModulePath(fromFile: string, specifier: string, projectIndex: ProjectIndex): string | null {
+const MODULE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
+
+/**
+ * Every file path a relative import specifier may refer to, in lookup order: `<base>.{ts,tsx,js,jsx}`, then
+ * `<base>/index.{ts,tsx,js,jsx}`, where `<base>` is the specifier with a trailing `.js`/`.jsx` removed (so a
+ * TS-style `./helper.js` finds `helper.ts` before `helper.js`).
+ */
+export function relativeImportCandidates(fromFile: string, specifier: string): string[] {
   const base = path.join(path.dirname(fromFile), specifier.replace(/\.jsx?$/, ''));
-  const candidates = [`${base}.ts`, `${base}.tsx`, path.join(base, 'index.ts')];
-  return candidates.find((candidate) => projectIndex.sourceFilesByPath.has(candidate)) ?? null;
+  return [...MODULE_EXTENSIONS.map((ext) => `${base}${ext}`), ...MODULE_EXTENSIONS.map((ext) => path.join(base, `index${ext}`))];
+}
+
+function resolveModulePath(fromFile: string, specifier: string, projectIndex: ProjectIndex): string | null {
+  return relativeImportCandidates(fromFile, specifier).find((candidate) => projectIndex.sourceFilesByPath.has(candidate)) ?? null;
 }
 
 function findLastNewAssignmentClassName(varName: string, stmts: ts.Statement[]): string | null {
