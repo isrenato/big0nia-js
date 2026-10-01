@@ -141,7 +141,7 @@ function findRelativeImport(
 }
 
 function resolveModulePath(fromFile: string, specifier: string, projectIndex: ProjectIndex): string | null {
-  const base = path.resolve(path.dirname(fromFile), specifier.replace(/\.jsx?$/, ''));
+  const base = path.join(path.dirname(fromFile), specifier.replace(/\.jsx?$/, ''));
   const candidates = [`${base}.ts`, `${base}.tsx`, path.join(base, 'index.ts')];
   return candidates.find((candidate) => projectIndex.sourceFilesByPath.has(candidate)) ?? null;
 }

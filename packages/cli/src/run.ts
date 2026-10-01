@@ -54,7 +54,8 @@ function parseCommand(argv: string[]): { json: boolean; paths: string[] } | null
 
 function displayPath(cwd: string, absolutePath: string): string {
   const relative = path.relative(cwd, absolutePath);
-  return relative.startsWith('..') || path.isAbsolute(relative) ? absolutePath : relative.split(path.sep).join('/');
+  const outside = relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative);
+  return outside ? absolutePath : relative.split(path.sep).join('/');
 }
 
 function firstParseError(sourceFile: ParsedSourceFile): string | null {
@@ -84,31 +85,32 @@ export async function run(argv: string[], io: CliIo): Promise<number> {
 
   const sourceFiles = new Map<string, ts.SourceFile>();
   for (const file of files) {
+    // Files are parsed under their display path so every path in the output (including the inner-loop
+    // location in interprocedural tips) is cwd-relative.
+    const shownPath = displayPath(io.cwd, file);
     let sourceFile: ParsedSourceFile;
     try {
-      sourceFile = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.ES2022, true);
+      sourceFile = ts.createSourceFile(shownPath, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.ES2022, true);
     } catch (error) {
-      io.stderr(`Skipping ${displayPath(io.cwd, file)}: ${(error as Error).message}\n`);
+      io.stderr(`Skipping ${shownPath}: ${(error as Error).message}\n`);
       failed = true;
       continue;
     }
 
     const parseError = firstParseError(sourceFile);
     if (parseError) {
-      io.stderr(`Skipping ${displayPath(io.cwd, file)}: ${parseError}\n`);
+      io.stderr(`Skipping ${shownPath}: ${parseError}\n`);
       failed = true;
       continue;
     }
 
-    sourceFiles.set(file, sourceFile);
+    sourceFiles.set(shownPath, sourceFile);
   }
 
   const projectIndex = buildProjectIndex(sourceFiles);
   const diagnostics: Diagnostic[] = [];
   for (const sourceFile of sourceFiles.values()) {
-    for (const diagnostic of analyseFile(sourceFile, RULES, projectIndex)) {
-      diagnostics.push({ ...diagnostic, file: displayPath(io.cwd, diagnostic.file) });
-    }
+    diagnostics.push(...analyseFile(sourceFile, RULES, projectIndex));
   }
 
   diagnostics.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);

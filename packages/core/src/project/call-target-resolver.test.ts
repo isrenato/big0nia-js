@@ -157,6 +157,19 @@ describe('resolveCallTarget', () => {
     expect(target?.filePath).toBe('/virtual/helper.ts');
   });
 
+  it('keeps file paths relative when the analysed files are named relatively', () => {
+    const helper = parseSource('export function matchOrders() {}', 'src/lib/helper.ts');
+    const { call, file, precedingStmts } = callExprIn(
+      `
+      import { matchOrders } from '../lib/helper.js';
+      function run() { matchOrders(); }
+      `,
+      'src/app/run.ts'
+    );
+    const target = resolveCallTarget(call, precedingStmts, indexOf(file, helper));
+    expect(target?.filePath).toBe('src/lib/helper.ts');
+  });
+
   it('resolves an aliased relative function import to the exported name', () => {
     const helper = parseSource('export function matchOrders() {}', '/virtual/helper.ts');
     const { call, file, precedingStmts } = callExprIn(

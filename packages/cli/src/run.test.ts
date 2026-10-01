@@ -139,7 +139,7 @@ for (const user of users) {
       expect.objectContaining({ file: 'src/run.ts', line: 2, ruleId: 'interprocedural-loop-join' })
     );
     expect(rows.find((r: { ruleId: string }) => r.ruleId === 'interprocedural-loop-join').tip).toContain(
-      `inner loop at ${path.join(dir, 'src/helper.ts')}:2`
+      'inner loop at src/helper.ts:2'
     );
   });
 
