@@ -119,15 +119,19 @@ export function isRootedInIndexedAccess(expr: ts.Expression, collectionExpr: ts.
   return false;
 }
 
-function matchIndexed(outerSide: ts.Expression, outer: IndexedBinding, innerSide: ts.Expression, inner: IndexedBinding): JoinSignature | null {
-  if (!isRootedInIndexedAccess(outerSide, outer.collectionExpr, outer.indexName)) return null;
-  if (!isRootedInIndexedAccess(innerSide, inner.collectionExpr, inner.indexName)) return null;
-
+function describeSides(outerSide: ts.Expression, innerSide: ts.Expression): JoinSignature | null {
   const outerDesc = describe(outerSide);
   const innerDesc = describe(innerSide);
   if (!outerDesc || !innerDesc) return null;
 
   return { outerDisplay: outerDesc[0], innerDisplay: innerDesc[0], innerKey: innerDesc[1] };
+}
+
+function matchIndexed(outerSide: ts.Expression, outer: IndexedBinding, innerSide: ts.Expression, inner: IndexedBinding): JoinSignature | null {
+  if (!isRootedInIndexedAccess(outerSide, outer.collectionExpr, outer.indexName)) return null;
+  if (!isRootedInIndexedAccess(innerSide, inner.collectionExpr, inner.indexName)) return null;
+
+  return describeSides(outerSide, innerSide);
 }
 
 function matchVariableAgainstIndexed(
@@ -139,11 +143,19 @@ function matchVariableAgainstIndexed(
   if (!isRootedIn(outerSide, outerVarName)) return null;
   if (!isRootedInIndexedAccess(innerSide, inner.collectionExpr, inner.indexName)) return null;
 
-  const outerDesc = describe(outerSide);
-  const innerDesc = describe(innerSide);
-  if (!outerDesc || !innerDesc) return null;
+  return describeSides(outerSide, innerSide);
+}
 
-  return { outerDisplay: outerDesc[0], innerDisplay: innerDesc[0], innerKey: innerDesc[1] };
+function matchIndexedAgainstVariable(
+  outerSide: ts.Expression,
+  outer: IndexedBinding,
+  innerSide: ts.Expression,
+  innerVarName: string
+): JoinSignature | null {
+  if (!isRootedInIndexedAccess(outerSide, outer.collectionExpr, outer.indexName)) return null;
+  if (!isRootedIn(innerSide, innerVarName)) return null;
+
+  return describeSides(outerSide, innerSide);
 }
 
 export function findIndexedJoinSignature(stmts: ts.Statement[], outer: IndexedBinding, inner: IndexedBinding): JoinSignature | null {
@@ -156,4 +168,12 @@ export function findVariableAgainstIndexedJoinSignature(
   inner: IndexedBinding
 ): JoinSignature | null {
   return findWithMatcher(stmts, (a, b) => matchVariableAgainstIndexed(a, outerVarName, b, inner) ?? matchVariableAgainstIndexed(b, outerVarName, a, inner));
+}
+
+export function findIndexedAgainstVariableJoinSignature(
+  stmts: ts.Statement[],
+  outer: IndexedBinding,
+  innerVarName: string
+): JoinSignature | null {
+  return findWithMatcher(stmts, (a, b) => matchIndexedAgainstVariable(a, outer, b, innerVarName));
 }

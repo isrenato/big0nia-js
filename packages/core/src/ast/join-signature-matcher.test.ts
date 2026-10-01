@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import * as ts from 'typescript';
 import {
   findJoinSignature,
+  findIndexedAgainstVariableJoinSignature,
   findIndexedJoinSignature,
   findVariableAgainstIndexedJoinSignature,
   isRootedIn,
@@ -185,6 +186,27 @@ describe('findVariableAgainstIndexedJoinSignature', () => {
         ifStatementsIn('if (other.id === orders[j].userId) { doThing(); }'),
         'user',
         { collectionExpr: firstExprStatementExpr('orders;'), indexName: 'j' }
+      )
+    ).toBeNull();
+  });
+});
+
+describe('findIndexedAgainstVariableJoinSignature', () => {
+  it('matches an indexed outer access against a plain inner item variable', () => {
+    const signature = findIndexedAgainstVariableJoinSignature(
+      ifStatementsIn('if (order.userId === users[i].id) { doThing(); }'),
+      { collectionExpr: firstExprStatementExpr('users;'), indexName: 'i' },
+      'order'
+    );
+    expect(signature).toEqual({ outerDisplay: 'id', innerDisplay: 'userId', innerKey: 'userId' });
+  });
+
+  it('returns null when the inner item variable is not referenced', () => {
+    expect(
+      findIndexedAgainstVariableJoinSignature(
+        ifStatementsIn('if (users[i].id === other.userId) { doThing(); }'),
+        { collectionExpr: firstExprStatementExpr('users;'), indexName: 'i' },
+        'order'
       )
     ).toBeNull();
   });
