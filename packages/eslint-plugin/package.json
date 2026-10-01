@@ -1,0 +1,47 @@
+{
+  "name": "@big0nia/eslint-plugin",
+  "version": "0.1.0",
+  "description": "ESLint plugin for big0nia: flags accidental O(n²) loops in JavaScript and TypeScript.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts"
+  ],
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "performance",
+    "complexity"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "typescript": "^5.6.0"
+  },
+  "peerDependencies": {
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0 || ^10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@typescript-eslint/parser": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@big0nia/core": "0.1.0"
+  }
+}
