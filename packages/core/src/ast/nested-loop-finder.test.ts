@@ -1,7 +1,7 @@
 // packages/core/src/ast/nested-loop-finder.test.ts
 import { describe, it, expect } from 'vitest';
 import { collectLoops } from './loop-collector.js';
-import { findDirectNestedLoop } from './nested-loop-finder.js';
+import { findDirectNestedLoop, findLoopInStatements } from './nested-loop-finder.js';
 import { parseSource } from '../test-support/parse-source.js';
 
 describe('findDirectNestedLoop', () => {
@@ -82,5 +82,18 @@ describe('findDirectNestedLoop', () => {
     `);
     const [outer] = collectLoops(source);
     expect(findDirectNestedLoop(outer)).toBeNull();
+  });
+});
+
+describe('findLoopInStatements', () => {
+  it('finds a loop directly in a statement list', () => {
+    const source = parseSource('for (const order of orders) { console.log(order); }');
+    const found = findLoopInStatements(Array.from(source.statements));
+    expect(found?.kind).toBe('forOf');
+  });
+
+  it('returns null for a statement list with no loop', () => {
+    const source = parseSource('console.log(1);');
+    expect(findLoopInStatements(Array.from(source.statements))).toBeNull();
   });
 });
